@@ -41,7 +41,6 @@ export default function transformer(file: FileInfo, api: API) {
         );
       });
 
-    // replace usePrefixedTranslation call with useTranslation
     usePrefixedTranslationVariableDeclaration
       .find(j.CallExpression)
       .forEach((node) => {
@@ -50,7 +49,6 @@ export default function transformer(file: FileInfo, api: API) {
         node.node.arguments = [];
       });
 
-    // Replace declaration identifier from prefixedT to t
     usePrefixedTranslationVariableDeclaration
       .find(j.Identifier)
       .filter((path) => path.node.name === "prefixedT")
@@ -61,11 +59,9 @@ export default function transformer(file: FileInfo, api: API) {
     usePrefixedTranslationVariableDeclaration.insertAfter(
       `const keyPrefix = i18translation.${keyPrefix};`
     );
-
-    return keyPrefix;
   };
 
-  const fixTFunctionCall = (prefixedKeyString: string) => {
+  const fixTFunctionCall = () => {
     root
       .find(j.CallExpression)
       .filter((path) => path.node.callee.name === "prefixedT")
@@ -87,8 +83,8 @@ export default function transformer(file: FileInfo, api: API) {
   const didFindImport = fixImport();
 
   if (didFindImport) {
-    const prefixedKeyString = fixUseTranslationNameDeclaration();
-    fixTFunctionCall(prefixedKeyString);
+    fixUseTranslationNameDeclaration();
+    fixTFunctionCall();
   }
 
   return root.toSource({ quote: "single" });
