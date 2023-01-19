@@ -4,24 +4,28 @@ export default function transformer(file: FileInfo, api: API) {
   const j = api.jscodeshift;
   const root = j(file.source);
 
-  const fixImport = () => {
-    const usePrefixedTranslationImport = root.find(
+  const fixImportAndInsertNewImport = () => {
+    const usePrefixedTranslationImports = root.find(
       j.ImportDeclaration,
-      (path) => path.specifiers[0]?.local.name === "usePrefixedTranslation"
+      (importDeclaration) =>
+        importDeclaration.specifiers[0].local.name === "usePrefixedTranslation"
     );
 
     const didFindUsePrefixedTranslationImport =
-      !!usePrefixedTranslationImport.length;
+      !!usePrefixedTranslationImports.length;
 
     if (didFindUsePrefixedTranslationImport) {
-      usePrefixedTranslationImport.replaceWith(
+      usePrefixedTranslationImports.replaceWith(
         j.importDeclaration(
           [j.importSpecifier(j.identifier("useTranslation"))],
           j.stringLiteral("react-i18next")
         )
       );
-      usePrefixedTranslationImport.insertAfter(
-        "import { i18translation } from 'locale/translations/i18NsPaths'"
+      usePrefixedTranslationImports.insertAfter(
+        j.importDeclaration(
+          [j.importSpecifier(j.identifier("i18translation"))],
+          j.stringLiteral("locale/translations/i18NsPaths")
+        )
       );
     }
 
@@ -80,7 +84,7 @@ export default function transformer(file: FileInfo, api: API) {
       });
   };
 
-  const didFindImport = fixImport();
+  const didFindImport = fixImportAndInsertNewImport();
 
   if (didFindImport) {
     fixUseTranslationNameDeclaration();
